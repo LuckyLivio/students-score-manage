@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统计分析 - 学生成绩管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">学生成绩管理系统</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/dashboard}">首页</a>
+                <span class="navbar-text me-3">欢迎，<span sec:authentication="name"></span></span>
+                <a class="nav-link" th:href="@{/logout}">退出</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>统计分析</h2>
+                
+                <!-- 筛选条件 -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="get" th:action="@{/admin/statistics}">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="form-label">系部</label>
+                                    <select name="departmentId" class="form-select">
+                                        <option value="">全部系部</option>
+                                        <option th:each="dept : ${departments}" 
+                                                th:value="${dept.id}" 
+                                                th:text="${dept.name}"
+                                                th:selected="${dept.id == selectedDepartmentId}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">专业</label>
+                                    <select name="majorId" class="form-select">
+                                        <option value="">全部专业</option>
+                                        <option th:each="major : ${majors}" 
+                                                th:value="${major.id}" 
+                                                th:text="${major.name}"
+                                                th:selected="${major.id == selectedMajorId}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">学期</label>
+                                    <input type="text" name="semester" class="form-control" 
+                                           th:value="${selectedSemester}" placeholder="如：2023-2024-1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">查询</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">总学生数</h5>
+                                <p class="card-text h2 text-primary" th:text="${statistics.totalStudents}"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">平均分</h5>
+                                <p class="card-text h2 text-success" th:text="${#numbers.formatDecimal(statistics.averageScore, 1, 2)}"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">及格率</h5>
+                                <p class="card-text h2 text-info" th:text="${#numbers.formatDecimal(statistics.passRate, 1, 2)} + '%'"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">不及格人数</h5>
+                                <p class="card-text h2 text-danger" th:text="${statistics.failedStudents}"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>成绩分布</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="gradeDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>各科目平均分</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="subjectAverageChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 详细统计表格 -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>各班级统计</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>班级</th>
+                                    <th>学生数</th>
+                                    <th>平均分</th>
+                                    <th>最高分</th>
+                                    <th>最低分</th>
+                                    <th>及格人数</th>
+                                    <th>不及格人数</th>
+                                    <th>及格率</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="classStat : ${classStatistics}">
+                                    <td th:text="${classStat.className}"></td>
+                                    <td th:text="${classStat.totalStudents}"></td>
+                                    <td th:text="${#numbers.formatDecimal(classStat.averageScore, 1, 2)}"></td>
+                                    <td th:text="${classStat.maxScore}"></td>
+                                    <td th:text="${classStat.minScore}"></td>
+                                    <td th:text="${classStat.passedStudents}"></td>
+                                    <td th:text="${classStat.failedStudents}"></td>
+                                    <td th:text="${#numbers.formatDecimal(classStat.passRate, 1, 2)} + '%'"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        // 成绩分布图表
+        const gradeDistribution = /*[[${gradeDistribution}]]*/ {};
+        const ctx1 = document.getElementById('gradeDistributionChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'pie',
+            data: {
+                labels: ['优秀(90-100)', '良好(80-89)', '中等(70-79)', '及格(60-69)', '不及格(0-59)'],
+                datasets: [{
+                    data: [gradeDistribution.excellent, gradeDistribution.good, gradeDistribution.medium, gradeDistribution.pass, gradeDistribution.fail],
+                    backgroundColor: ['#28a745', '#007bff', '#17a2b8', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // 各科目平均分图表
+        const subjectAverages = /*[[${subjectAverages}]]*/ [];
+        const ctx2 = document.getElementById('subjectAverageChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: subjectAverages.map(item => item.subjectName),
+                datasets: [{
+                    label: '平均分',
+                    data: subjectAverages.map(item => item.averageScore),
+                    backgroundColor: '#007bff',
+                    borderColor: '#0056b3',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

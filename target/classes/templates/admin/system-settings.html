@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - 学生成绩管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">学生成绩管理系统</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/dashboard}">首页</a>
+                <span class="navbar-text me-3">欢迎，<span sec:authentication="name"></span></span>
+                <a class="nav-link" th:href="@{/logout}">退出</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-3">
+                <!-- 侧边栏导航 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>系统管理</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="#subjects" class="list-group-item list-group-item-action" data-bs-toggle="tab">科目管理</a>
+                        <a href="#departments" class="list-group-item list-group-item-action" data-bs-toggle="tab">系部管理</a>
+                        <a href="#majors" class="list-group-item list-group-item-action" data-bs-toggle="tab">专业管理</a>
+                        <a href="#classes" class="list-group-item list-group-item-action" data-bs-toggle="tab">班级管理</a>
+                        <a href="#users" class="list-group-item list-group-item-action" data-bs-toggle="tab">用户管理</a>
+                        <a href="#settings" class="list-group-item list-group-item-action active" data-bs-toggle="tab">系统参数</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-9">
+                <div class="tab-content">
+                    <!-- 系统参数设置 -->
+                    <div class="tab-pane fade show active" id="settings">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>系统参数设置</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" th:action="@{/admin/system-settings}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">系统名称</label>
+                                                <input type="text" name="systemName" class="form-control" 
+                                                       th:value="${settings.systemName}" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">当前学期</label>
+                                                <input type="text" name="currentSemester" class="form-control" 
+                                                       th:value="${settings.currentSemester}" placeholder="如：2023-2024-1">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">及格分数线</label>
+                                                <input type="number" name="passScore" class="form-control" 
+                                                       th:value="${settings.passScore}" min="0" max="100" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">优秀分数线</label>
+                                                <input type="number" name="excellentScore" class="form-control" 
+                                                       th:value="${settings.excellentScore}" min="0" max="100" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">系统公告</label>
+                                        <textarea name="announcement" class="form-control" rows="4" 
+                                                  th:text="${settings.announcement}"></textarea>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="allowStudentQuery" class="form-check-input" 
+                                                   th:checked="${settings.allowStudentQuery}">
+                                            <label class="form-check-label">允许学生查询成绩</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="enableEmailNotification" class="form-check-input" 
+                                                   th:checked="${settings.enableEmailNotification}">
+                                            <label class="form-check-label">启用邮件通知</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary">保存设置</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 科目管理 -->
+                    <div class="tab-pane fade" id="subjects">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5>科目管理</h5>
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                                    添加科目
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>科目名称</th>
+                                            <th>科目代码</th>
+                                            <th>学分</th>
+                                            <th>创建时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="subject : ${subjects}">
+                                            <td th:text="${subject.name}"></td>
+                                            <td th:text="${subject.subjectCode}"></td>
+                                            <td th:text="${subject.credits}"></td>
+                                            <td th:text="${#temporals.format(subject.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                        onclick="editSubject([[${subject.id}]], '[[${subject.name}]]', '[[${subject.subjectCode}]]', [[${subject.credits}]])">
+                                                    编辑
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="deleteSubject([[${subject.id}]])">
+                                                    删除
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 其他管理模块类似结构... -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加科目模态框 -->
+    <div class="modal fade" id="addSubjectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加科目</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" th:action="@{/admin/subjects}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">科目名称</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">科目代码</label>
+                            <input type="text" name="subjectCode" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">学分</label>
+                            <input type="number" name="credits" class="form-control" min="1" max="10" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function editSubject(id, name, code, credits) {
+            // 编辑科目逻辑
+        }
+        
+        function deleteSubject(id) {
+            if (confirm('确定要删除这个科目吗？')) {
+                fetch('/admin/subjects/' + id, {
+                    method: 'DELETE'
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
